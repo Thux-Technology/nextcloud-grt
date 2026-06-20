@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:11.4
+    container_name: nextcloud-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - /opt/nextcloud/db:/var/lib/mysql
+    networks:
+      - nextcloud-net
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=128m
+
+  app:
+    image: nextcloud:30.0.5-apache
+    container_name: nextcloud-app
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      MYSQL_HOST: db
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      NEXTCLOUD_TRUSTED_DOMAINS: grt.thux.tech
+    volumes:
+      - /opt/nextcloud/config:/var/www/html/config
+      - /opt/nextcloud/data:/var/www/html/data
+      - /opt/nextcloud/external:/mnt/grt
+    networks:
+      - nextcloud-net
+    ports:
+      - "127.0.0.1:8080:80"
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=256m
+
+networks:
+  nextcloud-net:
+    driver: bridge
